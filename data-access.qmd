@@ -1,0 +1,58 @@
+---
+title: "data-access"
+format: html
+editor: visual
+---
+
+# reproducible data access
+
+library(readr)
+library(pins)
+
+## download from the web 
+
+dataset: https://bit.ly/iep-dataset
+
+```{r}
+delta_sites_url <-'https://cn.dataone.org/cn/v2/resolve/https%3A%2F%2Fpasta.lternet.edu%2Fpackage%2Fdata%2Feml%2Fedi%2F233%2F2%2F6a82451e84be1fe82c9821f30ffc2d7d'
+
+delta_sites <- readr::read_csv(delta_sites_url, show_col_types = FALSE)
+head(delta_sites)
+```
+
+# use pins to cache a local copy of the file: really easy way to download without going onlline everytime to retrieve the data
+
+delta_sites_pin<-(delta_sites_url)
+delta_sites <- readr::read_csv(delta_sites_pin, show_col_types = FALSE)
+head(delta_sites)
+
+## content identifier 
+
+library(contentid)
+delta_catch_url <- "https://cn.dataone.org/cn/v2/resolve/https%3A%2F%2Fpasta.lternet.edu%2Fpackage%2Fdata%2Feml%2Fedi%2F233%2F2%2F015e494911cf35c90089ced5a3127334"
+
+delta_catch.id <- store(delta_catch_url)
+
+## Finding where things are stored (when stored in multiple places online)
+
+vostok_co2 <- system.file("extdata", "vostok.icecore.co2", packaage="contentid")
+
+vostok_id <- store(vostok_co2)
+
+vostok_co2 <- system.file("extdata", "vostok.icecore.co2", package = "contentid")
+vostok_id <- store(vostok_co2)
+vostok <- contentid::resolve(vostok_id, store=TRUE)
+co2 <- read.table(vostok, col.names = c("depth", "age_ice", "age_air", "co2"), skip = 21)
+head(co2)
+
+delta_catch_file <- contentid::resolve(delta_catch_id, store = TRUE)
+delta_catch <- readr::read_csv(delta_catch_file, show_col_types=FALSE)
+head(delta_catch)
+
+delta_catch_id <- store(delta_catch_url)
+print(c(delta_catch_id=delta_catch_id))
+
+delta_catch_file <- contentid::resolve(delta_catch_id, store = TRUE)
+delta_catch <- readr::read_csv(delta_catch_file, show_col_types=FALSE)
+head(delta_catch)
+
