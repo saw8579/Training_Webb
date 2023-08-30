@@ -1,0 +1,139 @@
+---
+title: "Spatial Joins"
+format: html
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+## spatial joins
+```{r}
+# read in population data
+pop <- read_csv("data/alaska_population.csv")
+
+```
+```{r}
+pop_4326 <- st_as_sf(pop,
+                     coords = c('lng', 'lat'),
+                     crs = 4326,
+                     remove = F)
+
+head(pop_4326)
+```
+library(readr)
+library(sf)
+library(ggplot2)
+library(leaflet)
+library(scales)
+library(ggmap)
+library(dplyr)
+
+knb_url <- 'https://dev.nceas.ucsb.edu/knb/d1/mn/v2/object/urn%3Auuid%3Aaceaecb2-1ce0-4d41-a839-d3607d32bb58'
+download.file(url = knb_url, destfile = 'demo_data.zip')
+unzip('demo_data.zip', exdir = 'data')
+file.remove('demo_data.zip')
+
+# read in shapefile using read_sf()
+ak_regions <- read_sf("data/ak_regions_simp.shp")
+
+# quick plot
+plot(ak_regions)
+
+class(ak_regions)
+
+head(ak_regions)
+
+glimpse(ak_regions)
+
+st_crs(ak_regions)
+
+ak_regions_3338 <- ak_regions %>%
+    st_transform(crs = 3338)
+
+st_crs(ak_regions_3338)
+
+plot(ak_regions_3338)
+
+# returns the names of all the columns in dataset
+colnames(ak_regions_3338)
+
+ak_regions_3338 %>%
+    select(region)
+
+unique(ak_regions_3338$region)
+
+ak_regions_3338 %>%
+    filter(region == "Southeast")
+    
+    # read in population data
+pop <- read_csv("data/alaska_population.csv")
+
+pop_4326 <- st_as_sf(pop,
+                     coords = c('lng', 'lat'),
+                     crs = 4326,
+                     remove = F)
+
+head(pop_4326)
+
+pop_joined <- st_join(pop_4326, ak_regions_3338, join = st_within)
+
+pop_3338 <- st_transform(pop_4326, crs = 3338)
+
+pop_joined <- st_join(pop_3338, ak_regions_3338, join = st_within)
+
+head(pop_joined)
+
+pop_region <- pop_joined %>%
+    as.data.frame() %>%
+    group_by(region) %>%
+    summarise(total_pop = sum(population))
+
+head(pop_region)
+
+pop_region_3338 <- left_join(ak_regions_3338, pop_region, by = "region")
+
+# plot to check
+plot(pop_region_3338["total_pop"])
+
+pop_mgmt_338 <- pop_region_3338 %>%
+    group_by(mgmt_area) %>%
+    summarize(total_pop = sum(total_pop))
+
+plot(pop_mgmt_338["total_pop"])
+
+pop_mgmt_3338 <- pop_region_3338 %>%
+    group_by(mgmt_area) %>%
+    summarize(total_pop = sum(total_pop), do_union = F)
+
+## keeping regional boundaries while showing population by management unit
+plot(pop_mgmt_3338["total_pop"])
+
+write_sf(pop_region_3338, "data/ak_regions_population.shp")
+
+ggplot(pop_region_3338) +
+    geom_sf(aes(fill = total_pop)) +
+    labs(fill = "Total Population") +
+    scale_fill_continuous(low = "khaki",
+                          high =  "firebrick",
+                          labels = comma) +
+    theme_bw()
+
