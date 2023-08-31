@@ -1,0 +1,54 @@
+library(tidytext) # tidy text tools
+library(quanteda) # create a corpus
+library(pdftools) # read in data
+library(dplyr) # wrangle data
+library(stringr) # string manipulation
+library(ggplot2) # plots
+library(wordcloud)
+
+##getting the data frame
+path_df <- "data/datadsc-plan-ch4.pdf.pdf"
+dp_ch4 <- pdftools::pdf_text(path_df)
+
+summary(dp_ch4)
+
+corpus_dp_ch4 <- quanteda::corpus(dp_ch4)
+
+tidy_dp_ch4 <- tidytext::tidy(corpus_dp_ch4)
+
+## one word per row 
+unnest_dp_ch4 <- tidy_dp_ch4 %>% 
+    unnest_tokens(output = word,
+                  input = text) 
+                  
+##removing unnessary words from analysis 
+words_dp_ch4 <- unnest_dp_ch4 %>% 
+    dplyr::anti_join(stop_words)
+
+##counting the most requent word
+count_dp_ch4 <- words_dp_ch4 %>%
+    count(word) %>%
+    slice_max(n = 10, order_by = n)
+    
+# bar plot
+ggplot(count_dp_ch4, aes(x = reorder(word, n), y = n)) +
+    geom_col() +
+    coord_flip() +
+    labs(title = "Top 10 Most Frequently Occurring Words in Chapter 4 of the Delta Plan",
+         x = NULL,
+         y = "count") +
+    theme_minimal()
+    
+# lollipop plot
+ggplot(data = count_dp_ch4, aes(x=reorder(word, n), y=n)) +
+    geom_point() +
+    geom_segment(aes(x=word, xend=word, y=0, yend=n)) +
+    coord_flip() +
+    labs(title = "Top 10 Most Frequently Occurring Words in Chapter 8 of the Delta Plan",
+         x = NULL,
+         y = "Count") +
+    theme_minimal()
+    
+# wordcloud
+wordcloud(words = count_dp_ch4$word,
+          freq = count_dp_ch4$n)

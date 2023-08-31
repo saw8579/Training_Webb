@@ -1,0 +1,89 @@
+---
+title: "Survey Training"
+format: html
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+library(qualtRics)
+library(tidyr)
+library(knitr)
+library(ggplot2)
+library(kableExtra)
+library(dplyr)
+
+##connect to qualtrics with a key
+qualtrics_api_credentials(api_key = "Zzuvz4t36VkB5akSB8W3Dryg5YgZ9lowoc3JEfEN", base_url = "ucsb.co1.qualtrics.com", install = TRUE, overwrite = T)
+
+##restart to verify account (also in census)
+rstudioapi::restartSession()
+
+##access all surveys
+surveys <- all_surveys()
+kable(surveys) %>%
+    kable_styling()
+    
+##name survey that you want
+i <- which(surveys$name == "Survey for Data Science Training")
+id <- surveys$id[i]
+
+## get questions (kable gets data into publish tables to HTML)
+questions <- survey_questions(id)
+kable(questions) %>%
+    kable_styling()
+
+## get results 
+survey_results <- fetch_survey(id)
+
+##tidy and summarize results 
+q2 <- survey_results %>% 
+    select(Q2) %>% 
+    group_by(Q2) %>% 
+    summarise(n = n())
+    
+##show these results in a table using the kable function from the knitr package:
+
+kable(q2, col.names = c("How long have you been programming?",
+                        "Number of responses")) %>%
+    kable_styling()
+
+##tidy, sumaarize, and plot results 
+q3 <- survey_results %>%     
+    select(Q3) %>% 
+    group_by(Q3) %>% 
+    summarise(n = n())
+
+ggplot(data = q3, 
+       mapping = aes(x = Q3, y = n)) +
+    geom_col() +
+    labs(x = "What language do you currently use most frequently?", y = "Number of reponses") +
+    theme_minimal()
+    
+##tidy, sumaarize, and plot free text responses (to an open ended question):
+q3_text <- survey_results %>% 
+    select(Q3_7_TEXT) %>% 
+    drop_na()
+
+kable(q3_text, col.names = c("Other responses to 'What language do you currently use mose frequently?'")) %>% 
+    kable_styling()
+

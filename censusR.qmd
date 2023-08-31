@@ -31,3 +31,62 @@ library(tidyr)
 library(ggplot2)
 
 census_api_key("64f2b798e131cccbdb1e0fe7d03eaa56e7e1e7ea", install = TRUE)
+
+readRenviron("~/.Renviron")
+
+## calling the data; seperate years and identify different codes "P..." through "Walker Book" in course manual
+pop_2020 <- get_decennial(
+    geography = "state",
+    variable = "P1_001N",
+    year = 2020)
+
+pop_2010 <- get_decennial(
+  geography = "state", 
+  variables = "P001001",
+  year = 2010)
+  
+table_p2_2020 <- get_decennial(
+    geography = "state",
+    table = "P2",
+    year = 2020)
+    
+unique(table_p2_2020$variable)
+
+## understanding variables for each years
+vars_pl_2020 <-  load_variables(2020, "pl")
+vars_pl_2010 <-  load_variables(2010, "pl")
+
+vars_dhc_2020 <-  load_variables(2020, "dhc")
+
+## Note you have to specify the file with sumfile =
+household_2020 <- get_decennial(
+    geography = "state",
+    variable = "H10_001N",
+    year = 2020,
+    sumfile = "dhc")
+
+##changing scale of data call 
+delta_hispanic <- get_decennial(
+  geography = "county",
+  state = "CA",
+  county = c("Alameda", "Contra Costa", "Sacramento", "San Joaquin", "Solano", "Yolo"),
+  variables = "P2_002N", 
+  year = 2020)
+  
+## call more than on variable## 
+race_vars <- c(
+  Hispanic = "P2_002N",
+  White = "P2_005N",
+  Black = "P2_006N",
+  Native = "P2_007N",
+  Asian = "P2_008N",
+  HIPI = "P2_009N") ## Native Hawaiian and other Pacific Islander
+
+delta_race <- get_decennial(
+  geography = "county",
+  state = "CA",
+  county = c("Alameda", "Contra Costa", "Sacramento", "San Joaquin", "Solano", "Yolo"),
+  variables = race_vars,
+  summary_var = "P2_001N",
+  year = 2020)
+  
